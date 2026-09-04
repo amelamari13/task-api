@@ -2,7 +2,6 @@ package com.amel.taskapi.service;
 
 import com.amel.taskapi.dto.TaskRequest;
 import com.amel.taskapi.entity.Task;
-import com.amel.taskapi.entity.TaskStatus;
 import com.amel.taskapi.exception.TaskNotFoundException;
 import com.amel.taskapi.repository.TaskRepository;
 import org.springframework.stereotype.Service;
