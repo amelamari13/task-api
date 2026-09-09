@@ -13,6 +13,8 @@ public class TaskRequest {
     @NotNull
     private TaskStatus status;
 
+    private Integer storyPoints;
+
     public String getTitle() {
         return title;
     }
@@ -37,5 +39,7 @@ public class TaskRequest {
         this.status = status;
     }
 
+    public Integer getStoryPoints() { return storyPoints; }
 
+    public void setStoryPoints(Integer storyPoints) { this.storyPoints = storyPoints; }
 }

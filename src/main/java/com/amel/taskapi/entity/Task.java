@@ -27,6 +27,8 @@ public class Task {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    private Integer storyPoints;
+
     public Task(){
 
     }
@@ -66,6 +68,10 @@ public class Task {
     public LocalDateTime getCreatedAt(){
         return createdAt;
     }
+
+    public Integer getStoryPoints() { return storyPoints; }
+
+    public void setStoryPoints(Integer storyPoints) { this.storyPoints = storyPoints; }
 
     public void setCreatedAt(LocalDateTime createdAt){
         this.createdAt = createdAt;

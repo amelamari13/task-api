@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f7f7f5;
+        }
+
+        h1 {
+            font-size: 22px;
+        }
+
+        h3 {
+            margin-top: 0;
+        }
+
+        .panel-create-wrapper {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-create {
+            display: flex;
+            align-items: stretch;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-edit {
+            background: #fff8ec;
+            border: 2px solid #443025;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field input, .field textarea, .field select {
+            height: 100%;
+        }
+
+        .field:nth-child(2) {
+            flex: 1;
+        }
+
+        input, textarea, select {
+            padding: 6px 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #443025;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .task {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .task-list {
+            min-height: 60px;
+        }
+    </style>
+</head>
+
+<body>
+<h1>Task Manager — API</h1>
+
+<div class="panel-create-wrapper">
+    <h3>Créer une tâche</h3>
+    <div class="panel-create">
+        <div class="field">
+            <label for="title">Titre</label>
+            <input id="title" placeholder="Titre de la tâche">
+        </div>
+
+        <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" placeholder="Description de la tâche"></textarea>
+        </div>
+
+        <div class="field">
+            <label for="storyPoints">Story Points</label>
+            <select id="storyPoints">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="8">8</option>
+                <option value="13">13</option>
+                <option value="21">21</option>
+            </select>
+        </div>
+
+        <button onclick="createTask()">Créer</button>
+    </div>
+</div>
+
+<div class="panel-edit" id="editPanel" style="display: none;">
+    <h3>Modifier la tâche</h3>
+
+    <div class="field">
+        <label for="editTitle">Titre</label>
+        <input id="editTitle">
+    </div>
+
+    <div class="field">
+        <label for="editDescription">Description</label>
+        <textarea id="editDescription"></textarea>
+    </div>
+
+    <div class="field">
+        <label for="editStoryPoints">Story Points</label>
+        <select id="editStoryPoints">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="8">8</option>
+            <option value="13">13</option>
+            <option value="21">21</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="editStatus">Statut</label>
+        <select id="editStatus">
+            <option value="TODO">À faire</option>
+            <option value="IN_PROGRESS">En cours</option>
+            <option value="DONE">Terminé</option>
+        </select>
+    </div>
+
+    <button onclick="saveEdit()">Enregistrer</button>
+    <button onclick="cancelEdit()">Annuler</button>
+</div>
+
+<div class="panel">
+    <h3>À faire</h3>
+    <div id="TODO" class="task-list"></div>
+
+    <h3>En cours</h3>
+    <div id="IN_PROGRESS" class="task-list"></div>
+
+    <h3>Terminé</h3>
+    <div id="DONE" class="task-list"></div>
+</div>
+
+<script>
+    const API_URL = "/tasks";
+    let taskBeingEdited = null;
+
+    async function loadTasks() {
+        const res = await fetch(API_URL);
+        const tasks = await res.json();
+
+        ["TODO", "IN_PROGRESS", "DONE"].forEach(
+            s => document.getElementById(s).innerHTML = ""
+        );
+
+        tasks.forEach(displayTask);
+    }
+
+    function displayTask(task) {
+        const container = document.getElementById(task.status);
+        const div = document.createElement("div");
+
+        div.className = "task";
+
+        div.innerHTML = `
+        <div class="field">
+            <label>Titre</label>
+            <input value="${task.title}" disabled>
+        </div>
+        <div class="field">
+            <label>Description</label>
+            <textarea disabled>${task.description || ""}</textarea>
+        </div>
+        <div class="field">
+            <label>Story Points</label>
+            <input value="${task.storyPoints || "-"}" disabled>
+        </div>
+    `;
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Modifier";
+        editBtn.onclick = () => openEditPanel(task);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Supprimer";
+        deleteBtn.onclick = () => deleteTask(task.id);
+
+        div.appendChild(editBtn);
+        div.appendChild(deleteBtn);
+        container.appendChild(div);
+    }
+
+    async function createTask() {
+        const title = document.getElementById("title").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const storyPoints = Number(document.getElementById("storyPoints").value);
+
+        if (!title) {
+            return;
+        }
+
+        await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                storyPoints,
+                status: "TODO"
+            })
+        });
+
+        document.getElementById("title").value = "";
+        document.getElementById("description").value = "";
+        loadTasks();
+    }
+
+    function openEditPanel(task) {
+        document.getElementById("editTitle").value = task.title;
+        document.getElementById("editDescription").value = task.description || "";
+        document.getElementById("editStoryPoints").value = task.storyPoints || 1;
+        document.getElementById("editStatus").value = task.status;
+        taskBeingEdited = task;
+        document.getElementById("editPanel").style.display = "block";
+    }
+
+    function cancelEdit() {
+        taskBeingEdited = null;
+        document.getElementById("editPanel").style.display = "none";
+    }
+
+    async function saveEdit() {
+        const title = document.getElementById("editTitle").value.trim();
+        const description = document.getElementById("editDescription").value.trim();
+        const storyPoints = Number(document.getElementById("editStoryPoints").value);
+        const status = document.getElementById("editStatus").value;
+
+        if (!title) {
+            return;
+        }
+
+        await fetch(`${API_URL}/${taskBeingEdited.id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title, description, storyPoints, status })
+        });
+
+        cancelEdit();
+        loadTasks();
+    }
+
+    async function deleteTask(id) {
+        await fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        });
+
+        loadTasks();
+    }
+
+    loadTasks();
+</script>
+</body>
+
+</html>
