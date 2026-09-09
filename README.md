@@ -164,13 +164,15 @@ Sous Windows :
 
 L'application utilise **PostgreSQL** avec Spring Data JPA et Hibernate.
 
-Configuration locale utilisée :
+En local, la base utilisée est :
 
 ```text
 jdbc:postgresql://localhost:5433/taskdb
 ```
 
-Les identifiants de connexion ne doivent pas être versionnés dans le dépôt Git et doivent être fournis via la configuration de l'environnement.
+En production, PostgreSQL est hébergé sur **Google Cloud SQL**.
+
+La connexion entre Cloud Run et Cloud SQL utilise le connecteur Java Cloud SQL (`postgres-socket-factory`) et des variables d'environnement pour éviter de coder les informations de connexion directement dans l'application.
 
 ## Docker
 
@@ -192,13 +194,31 @@ docker run -p 8080:8080 -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.i
 
 ## Cloud Run
 
-Le projet est conteneurisé et préparé pour être déployé sur **Google Cloud Run**.
+L'application est déployée sur **Google Cloud Run** en région `europe-west9`.
 
-L'image Docker sera stockée dans **Artifact Registry**, puis utilisée par Cloud Run.
+L'image Docker est stockée dans **Artifact Registry** puis utilisée par Cloud Run.
 
-Les informations sensibles de connexion à la base ne sont pas intégrées directement dans l'image Docker et seront fournies via la configuration du service.
+La base PostgreSQL de production est hébergée sur **Cloud SQL**. Le service Cloud Run dispose du rôle IAM **Cloud SQL Client** afin d'accéder à l'instance PostgreSQL.
 
-> Déploiement Cloud Run en cours.
+Les paramètres de connexion sont fournis via des variables d'environnement :
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+```
+
+URL publique :
+
+```text
+https://task-api-939034790424.europe-west9.run.app/
+```
+
+Endpoint de vérification :
+
+```text
+https://task-api-939034790424.europe-west9.run.app/health
+```
 
 ## Lancer le projet en local
 
@@ -227,3 +247,13 @@ La documentation Swagger est disponible sur :
 ```text
 http://localhost:8080/swagger-ui/index.html
 ```
+
+## Limites du projet
+
+- **Interface volontairement minimaliste** : l’interface web est réalisée en HTML/CSS/JavaScript sans framework frontend. Elle permet de manipuler les tâches et de démontrer le fonctionnement de l’API, mais n’a pas vocation à remplacer une application frontend complète.
+
+- **Pas d’authentification** : l’application est publique et ne gère ni comptes utilisateurs, ni rôles, ni permissions. Dans une application réelle, une couche d’authentification et d’autorisation serait nécessaire avant d’exposer des données utilisateur.
+
+- **Gestion des secrets** : les paramètres de connexion à PostgreSQL sont injectés dans Cloud Run via des variables d’environnement et ne sont pas codés en dur dans le projet. Pour une application de production, un gestionnaire de secrets comme **Google Secret Manager** serait préférable pour stocker notamment le mot de passe de la base.
+
+- **Périmètre métier volontairement réduit** : le projet se concentre sur une seule ressource `Task` et sur les opérations CRUD associées. L’objectif est de démontrer une architecture Spring Boot complète — API REST, validation, persistance PostgreSQL, tests, Docker et déploiement Cloud — plutôt que de construire une application de gestion de projet complète.
